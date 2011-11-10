@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+        <item 
+                android:id="@+id/m_availability" 
+                android:title="Availability" 
+                android:icon="@drawable/availability_btn"/>
+        <item 
+                android:id="@+id/m_price" 
+                android:title="Price" 
+                android:icon="@drawable/rate_btn"/>
+        <item 
+                android:id="@+id/m_about" 
+                android:title="About" 
+                android:icon="@drawable/ic_menu_info_details"/>
+</menu>
