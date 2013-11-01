@@ -1,17 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="fill_parent">     
-	<TextView android:text="TextView" android:id="@+id/debugText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone" android:textSize="7pt"></TextView>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent" >
 
-    <com.google.android.maps.MapView
-          android:layout_width="fill_parent"
-          android:layout_height="wrap_content"
-          android:layout_weight="1"
-          android:id="@+id/mapview"
-          android:clickable="true"
-          android:apiKey="your-google-maps-api-key-here"
-      />
+    <FrameLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_weight="1"
+            android:id="@+id/mapframe">
 
-    <RelativeLayout android:id="@+id/RelativeLayout02" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@layout/header_black">
+        <!-- DoubleTapMapView gets programmatically added right here. -->
+
+        <TextView android:text="TextView" android:id="@+id/debugText" android:layout_width="match_parent" android:layout_height="wrap_content" android:visibility="gone" android:textSize="7pt"
+                  android:layout_gravity="top"></TextView>
+        <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/btnPanToMyLoc" android:layout_gravity="right" android:layout_margin="5pt"
+                android:background="@drawable/ic_pan_to_me"/>
+    </FrameLayout>
+
+    <RelativeLayout android:id="@+id/RelativeLayout02" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@layout/header_black"
+                    android:layout_gravity="bottom">
 
         <LinearLayout
             android:orientation="vertical"

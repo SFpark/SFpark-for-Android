@@ -26,6 +26,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 public class MyAnnotation {
 
     private static final int invalid_garage             = 1;
@@ -50,9 +54,33 @@ public class MyAnnotation {
     // #defines, and a baby step towards multiple language support.
     private static final String PRICE_STR       = "$%5.2f/hr";
     private static final String RESTRICTED_STR  = "Restricted";
-    private static final String ESTIMATE_STR    = "Estimated %d of %d spaces available";
+    private static final String TOW_STR         = "Tow away";
+    private static final String SWEEP_STR       = "Str sweep";
+
     private static final String INCREMENTAL_STR = "Incremental";
     private static final String NOCHARGE_STR    = "No charge";
+    private static final String PERHOUR_STR    = "Per hour";
+
+    private final static Set<String> NOPARKING_SET;
+    static {
+        final Set<String> tempSet = new HashSet<String>();
+        tempSet.add(RESTRICTED_STR);
+        tempSet.add(TOW_STR);
+        tempSet.add(SWEEP_STR);
+        NOPARKING_SET = Collections.unmodifiableSet(tempSet);
+    }
+
+    private final static Set<String> RATETYPE_SET;
+    static {
+        final Set<String> tempSet = new HashSet<String>();
+        tempSet.add(INCREMENTAL_STR);
+        tempSet.add(NOCHARGE_STR);
+        tempSet.add(PERHOUR_STR);
+        RATETYPE_SET = Collections.unmodifiableSet(tempSet);
+    }
+
+    private static final String ESTIMATE_STR    = "Estimated %d of %d spaces available";
+    private static final String NO_DATA_STR    = "No availability data";
 
     // for inThisBucket == 99% of time
     private static final String REPLACE0_STR = "12:00 AM";
@@ -152,6 +180,8 @@ public class MyAnnotation {
         int numberOfOccupiedSpaces;
         rateQualifier = "";
 
+        if (rq==null) fetchRates();
+
         if (shouldShowPrice) {
             blockfaceColorizerWithShowPrice(true); // side-effect (using it to set the pricePerHour)
             iconFinder(true); // side-effect (using it to set the pricePerHour for Garages...)
@@ -172,7 +202,8 @@ public class MyAnnotation {
             if (numberOfOccupiedSpaces > numberOfOperationalSpaces) {
                 descriptionOfAvailability = null;
             } else if (numberOfOperationalSpaces == 0 && numberOfOccupiedSpaces == 0) {
-                descriptionOfAvailability = RESTRICTED_STR;
+                // If 0/0 available, say "No data available" or say it's restricted/tow-away.
+                descriptionOfAvailability = (RATETYPE_SET.contains(rq) ? NO_DATA_STR : rq);
             } else {
                 descriptionOfAvailability =
                         String.format(ESTIMATE_STR,
@@ -394,6 +425,59 @@ public class MyAnnotation {
             lineColor = grey;
             pricePerHour = price;
         }
+
+        // Restricted is always RED.
+        if (NOPARKING_SET.contains(rq)) {
+            pricePerHour = 0; // priceHigh;
+            lineColor = red;
+        }
+
+        return lineColor;
+    }
+
+    /** Populate the rate fields: rq,rate,beg,end
+     *
+     * @return line color associated with price at this time; or red if restricted.
+     */
+    int fetchRates() throws JSONException {
+        int lineColor = grey;
+
+        if (allGarageData.has(RATES_KEY)) {
+            JSONObject rates = allGarageData.getJSONObject(RATES_KEY);
+            // Get an optional JSONArray associated with a key. It
+            // returns null if there is no such key, or if its
+            // value is not a JSONArray.
+            JSONArray  rateArray = rates.optJSONArray(RS_KEY);
+            if (!(rateArray == null)) {
+                int rsc = rateArray.length();
+                for (int i = 0; i < rsc; i++) {
+                    JSONObject rateObject = rateArray.getJSONObject(i);
+                    rateStructureHandle(rateObject);
+                    if (inThisBucketBegin(beg,end)) {
+                        lineColor = bucketFinder(Float.parseFloat(rate));
+                        break;
+                    }
+                }
+            } else {
+                JSONObject rateObject = rates.optJSONObject(RS_KEY);
+                if (!(rateObject == null)) {
+                    rateStructureHandle(rateObject);
+                    if (inThisBucketBegin(beg,end)) {
+                        lineColor = bucketFinder(Float.parseFloat(rate));
+                    }
+                } else {
+                    Log.v(TAG, "Fail... rateStructure isn't a dictionary or array.");
+                }
+            }
+        } else {
+            Log.v(TAG, "Fail... No rate information...");
+        }
+
+        // Restricted is always RED.
+        if (NOPARKING_SET.contains(rq)) {
+            lineColor = red;
+        }
+
         return lineColor;
     }
 
@@ -403,16 +487,15 @@ public class MyAnnotation {
         int numberOfOperationalSpaces = 0;
         int occupied = 0;
 
-        int lineColor;
-
-        lineColor = priceLow;
+        // populate rate variables, and get price-based line color (red if restricted)
+        int lineColor = fetchRates();
 
         if(allGarageData.has(OPER_KEY)) {
             numberOfOperationalSpaces = allGarageData.optInt(OPER_KEY,0);
             if (allGarageData.has(OCC_KEY)) {
                 occupied = allGarageData.optInt(OCC_KEY,0);
                 if(numberOfOperationalSpaces == 0 && occupied == 0 && !showPrice) {
-                    return red;
+                    return (NOPARKING_SET.contains(rq) ? red : grey);
                 }
                 if(numberOfOperationalSpaces == 0) {
                     usedPercent = 0.0;
@@ -426,45 +509,14 @@ public class MyAnnotation {
             // price/availability mode.
             if (!showPrice || (occupied != 0 && numberOfOperationalSpaces != 0)) {
                 if (!(allGarageData.has(OCC_KEY)) && !(allGarageData.has(OPER_KEY))) {
-                    return grey;
+                    return (NOPARKING_SET.contains(rq) ? red : grey);
                 }
                 return red;
             }
         }
 
-        if (showPrice) {
-            if (allGarageData.has(RATES_KEY)) {
-                JSONObject rates = allGarageData.getJSONObject(RATES_KEY);
-                // Get an optional JSONArray associated with a key. It
-                // returns null if there is no such key, or if its
-                // value is not a JSONArray.
-                JSONArray  rateArray = rates.optJSONArray(RS_KEY);
-                if (!(rateArray == null)) {
-                    int rsc = rateArray.length();
-                    for (int i = 0; i < rsc; i++) {
-                        JSONObject rateObject = rateArray.getJSONObject(i);
-                        rateStructureHandle(rateObject);
-                        if (inThisBucketBegin(beg,end)) {
-                            lineColor = bucketFinder(Float.parseFloat(rate));
-                            break;
-                        }
-                    }
-                } else {
-                    JSONObject rateObject = rates.optJSONObject(RS_KEY);
-                    if (!(rateObject == null)) {
-                        rateStructureHandle(rateObject);
-                        if (inThisBucketBegin(beg,end)) {
-                            lineColor = bucketFinder(Float.parseFloat(rate));
-                        }
-                    } else {
-                        Log.v(TAG, "Fail... rateStructure isn't a dictionary or array.");
-                    }
-                }
-            } else {
-                Log.v(TAG, "Fail... No rate information...");
-            }
-        } else {
-            // color for availability...
+        // Get color for availability...
+        if (!showPrice) {
             if (usedPercent >= 0.000000 && usedPercent < 0.70) {
                 //low usage --> 0x2B/255.0
                 lineColor = availHigh;
@@ -484,6 +536,14 @@ public class MyAnnotation {
             } else {
                 lineColor = grey;
             }
+
+            // special case: 1 of 3 spaces is available
+            if (occupied==2 && numberOfOperationalSpaces==3) lineColor = availMed;
+        }
+
+        // Trump card: restricted is always red.
+        if (NOPARKING_SET.contains(rq)) {
+            lineColor = red;
         }
         return lineColor;
     }

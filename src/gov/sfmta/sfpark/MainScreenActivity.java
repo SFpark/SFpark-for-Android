@@ -20,11 +20,6 @@ package gov.sfmta.sfpark;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Point;
-import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.RectShape;
 import android.location.Location;
@@ -32,24 +27,19 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.app.FragmentTransaction;
 import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.ImageView;
-import android.widget.TextView;
+import android.view.ViewGroup;
+import android.widget.*;
 
-import android.widget.Toast;
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.SherlockMapActivity;
 import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuItem;
 import com.flurry.android.FlurryAgent;
-import com.google.android.maps.GeoPoint;
-import com.google.android.maps.MapController;
-import com.google.android.maps.MapView;
-import com.google.android.maps.Overlay;
-import com.google.android.maps.Projection;
+import com.google.android.maps.*;
 
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
@@ -94,6 +84,7 @@ public class MainScreenActivity extends SherlockMapActivity
     // 10.0 mph == 4.47 mps Driving speed threshold
     static float SPEED_THRESHOLD = (float) 4.47;
 
+    static MyLocationOverlay mBlueDot;
     LocationManager  locationManager;
     LocationListener locationListener;
     String		   thisProvider;
@@ -105,9 +96,6 @@ public class MainScreenActivity extends SherlockMapActivity
     static AnnotationsOverlay availabilityAnnotationsOverlay = null;
     static AnnotationsOverlay pricingAnnotationsOverlay = null;
 
-    static UserLocationOverlay userOverlay;
-
-
     TextView       debugText    = null;
     static boolean showPrice    = false;
     String         timeStampXML = null;
@@ -116,10 +104,10 @@ public class MainScreenActivity extends SherlockMapActivity
     TextView  legendlabel;
     ImageView legendImage;
 
-    public static MapView       mapView;
+    public static DoubleTapMapView mapView;
     public static MapController mc;
-    public static Date          timeStamp;
-    public static int           timeStampMinutes;
+    public static Date timeStamp;
+    public static int  timeStampMinutes;
 
     String serviceURL = "http://api.sfpark.org/sfpark/rest/availabilityservice?radius=2.0&response=json&pricing=yes&version=1.0";
     // String serviceURL = "http://api.sfpark.org/sfparkTestData.json";
@@ -130,7 +118,7 @@ public class MainScreenActivity extends SherlockMapActivity
     protected void onStart()
     {
         super.onStart();
-        //FlurryAgent.onStartSession(this, "--your--key-here--");
+        //FlurryAgent.onStartSession(this, "your-flurry-api-key-here");
     }
 
     @Override
@@ -151,7 +139,14 @@ public class MainScreenActivity extends SherlockMapActivity
         ActionBar ab = getSupportActionBar();
         ab.setDisplayShowTitleEnabled(false);
         ab.setIcon(R.drawable.logo_header);
-        ab.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
+        ab.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
+        ab.addTab(ab.newTab()
+                .setText("Availability")
+                .setTabListener(new TabListener()));
+        ab.addTab(ab.newTab()
+                .setText("Price")
+                .setTabListener(new TabListener()));
+
 
         // Dropdown navigation
         final String[] dropdownValues = getResources().getStringArray(R.array.dropdown);
@@ -169,24 +164,62 @@ public class MainScreenActivity extends SherlockMapActivity
         legendlabel = (TextView) findViewById(R.id.legendText);
         legendImage = (ImageView) findViewById(R.id.keyImage);
 
-        mapView = (MapView) findViewById(R.id.mapview);
+        // DoubleTapMapView... is a mapview that you can double-tap. :-/
+        mapView = new DoubleTapMapView(this);
+        FrameLayout fl = (FrameLayout) findViewById(R.id.mapframe);
+        fl.addView(mapView, 0, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
         mapView.setBuiltInZoomControls(true);
         mc = mapView.getController();
 
         // Creating and initializing Map
         GeoPoint p = getPoint(INITIAL_LATITUDE,INITIAL_LONGITUDE);
 
-        userOverlay = new UserLocationOverlay(this);
-
         mc.setCenter(p);
         mc.setZoom(14);
 
         startLocation();
 
+        showPrice = false;
+
+        enablePanToMe();
         reset();
     }
 
     private static final String STATE_SELECTED_NAVIGATION_ITEM = "selected_navigation_item";
+
+    void enablePanToMe() {
+        ImageButton btn = (ImageButton) findViewById(R.id.btnPanToMyLoc);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+            try {
+                GeoPoint p = mBlueDot.getMyLocation();
+                mapView.getController().animateTo(p);
+                mc.setZoom(17);
+            } catch (NullPointerException npe) {
+                // no zoomiepuss if no network
+            }
+            }
+        });
+    }
+
+    class TabListener implements ActionBar.TabListener {
+
+        @Override
+        public void onTabSelected(ActionBar.Tab tab, FragmentTransaction ft) {
+            if (tab!=null) onNavigationItemSelected(tab.getPosition(),0);
+        }
+
+        @Override
+        public void onTabUnselected(ActionBar.Tab tab, FragmentTransaction ft) {
+        }
+
+        @Override
+        public void onTabReselected(ActionBar.Tab tab, FragmentTransaction ft) {
+        }
+    }
 
     @Override
     public void onRestoreInstanceState(Bundle savedInstanceState) {
@@ -207,32 +240,35 @@ public class MainScreenActivity extends SherlockMapActivity
     @Override
     public boolean onNavigationItemSelected(int position, long id) {
 
-        if (position==0) { // availability
-            FlurryAgent.logEvent("Availability_Mode_Shown");
-            mapView.removeAllViews();
-            showPrice = false;
-            displayData(showPrice);
-            return true;
-        }
-
-        if (position==1) { // prices
-            if (showPrice == false) {
-                FlurryAgent.logEvent("Pricing_Mode_Shown");
-                mapView.removeAllViews();
-                showPrice = true;
-                displayData(showPrice);
+        try {
+            if (position==0) { // availability
+                if (showPrice == true) {
+                    FlurryAgent.logEvent("Availability_Mode_Shown");
+                    mapView.removeAllViews();
+                    showPrice = false;
+                    displayData(showPrice);
+                }
                 return true;
             }
+
+            if (position==1) { // prices
+                if (showPrice == false) {
+                    FlurryAgent.logEvent("Pricing_Mode_Shown");
+                    mapView.removeAllViews();
+                    showPrice = true;
+                    displayData(showPrice);
+                    return true;
+                }
+            }
+        } catch (NullPointerException npe) {
+            //yawn
         }
         return true;
     }
 
     void reset() {
-        getSupportActionBar().setSelectedNavigationItem(0);
-
         List<Overlay> mapOverlays = mapView.getOverlays();
         mapOverlays.clear();
-        showPrice = false;
         SFparkActivity.responseString = null;
         availabilityAnnotationsOverlay = null;
         pricingAnnotationsOverlay = null;
@@ -306,6 +342,15 @@ public class MainScreenActivity extends SherlockMapActivity
         int interval = 10*1000;
         int traveled = 10;			// every 10 meters
 
+        if (mBlueDot != null) {
+            if (state) {
+                mBlueDot.enableMyLocation();
+            }
+            else {
+                mBlueDot.disableMyLocation();
+            }
+        }
+
         if (locationListener != null) {
             if (state && thisProvider != null) {
                 locationManager.requestLocationUpdates(thisProvider,
@@ -328,67 +373,9 @@ public class MainScreenActivity extends SherlockMapActivity
 
     public void showInfo() {
         MYLOG("showInfo");
+        FlurryAgent.logEvent("About_Mode_Shown");
         CreditsViewActivity.present(mapView.getContext());
     }
-
-    protected class UserLocationOverlay extends com.google.android.maps.Overlay {
-        private final Drawable reticle;
-        private final Paint accuracyCirclePaint;
-        private final Paint accuracyCircleFill;
-
-        public UserLocationOverlay(Context context) {
-            reticle = context.getResources().getDrawable(R.drawable.ic_maps_indicator_current_position);
-            int reticleWidth = reticle.getIntrinsicWidth();
-            int reticleHeight = reticle.getIntrinsicHeight();
-            reticle.setBounds(0, 0, reticleWidth, reticleHeight);
-
-            accuracyCirclePaint = new Paint();
-            accuracyCirclePaint.setAntiAlias(true);
-            accuracyCirclePaint.setColor(0xFFAABBFF);
-            accuracyCirclePaint.setStyle(Paint.Style.STROKE);
-            accuracyCirclePaint.setStrokeWidth(1);
-            accuracyCircleFill = new Paint();
-            accuracyCircleFill.setAntiAlias(true);
-            accuracyCircleFill.setColor(0x33AABBFF);
-            accuracyCircleFill.setStyle(Paint.Style.FILL_AND_STROKE);
-        }
-
-        @Override
-        public boolean draw(Canvas canvas, MapView mapView, boolean shadow, long when) {
-            super.draw(canvas, mapView, shadow);
-
-            if (userLocation == null) {
-                return false;
-            }
-
-            Paint paint   = new Paint();
-            Point pt      = new Point();
-            int   offsetX = reticle.getIntrinsicWidth() / 2;
-            int   offsetY = reticle.getIntrinsicHeight() / 2;
-
-            Projection projection = mapView.getProjection();
-            projection.toPixels(getPointFromLocation(userLocation), pt);
-            float radius = projection.metersToEquatorPixels(userLocation.getAccuracy());
-            canvas.drawCircle(pt.x, pt.y, radius, accuracyCircleFill);
-            canvas.drawCircle(pt.x, pt.y, radius, accuracyCirclePaint);
-            canvas.save();
-            canvas.translate(pt.x - offsetX, pt.y - offsetY);
-            reticle.draw(canvas);
-            canvas.restore();
-
-            if (SFparkActivity.DEBUG) {
-                paint.setStrokeWidth(1);
-                paint.setColor(Color.BLACK);
-                paint.setStyle(Paint.Style.STROKE);
-                Double mph = speed * 2.23693629;
-                String spd = String.format("Speed %dmph", mph.intValue());
-                canvas.drawText(spd, pt.x, pt.y, paint);
-            }
-
-            return true;
-        }
-    }
-
 
     @Override
     protected boolean isRouteDisplayed() {
@@ -562,9 +549,10 @@ public class MainScreenActivity extends SherlockMapActivity
             }
         }
 
-        if (userOverlay != null) {
-            mapOverlays.add(userOverlay);
-        }
+        if (mBlueDot==null) mBlueDot = new MyLocationOverlay(mapView.getContext(), mapView);
+        mBlueDot.enableMyLocation();
+        mapOverlays.add(mBlueDot);
+
         mapView.invalidate();
     }
 

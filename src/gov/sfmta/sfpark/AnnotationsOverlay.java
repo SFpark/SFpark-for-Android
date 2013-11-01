@@ -220,11 +220,15 @@ public class AnnotationsOverlay extends ItemizedOverlay {
             subtitle.setText(R.string.full);
             aa.subtitle = mContext.getString(R.string.full);
         } else {
-            if (aa.subtitle.startsWith("Estimated 0 of") || aa.subtitle.startsWith("Estimated -")) {
-                subtitle.setText(R.string.full);
-                aa.subtitle = mContext.getString(R.string.full);
-            } else {
+            if (aa.onStreet) {
                 subtitle.setText(aa.subtitle);
+            } else {
+                if (aa.subtitle.startsWith("Estimated 0 of") || aa.subtitle.startsWith("Estimated -") || aa.subtitle.startsWith("-")) {
+                        subtitle.setText(R.string.full);
+                        aa.subtitle = mContext.getString(R.string.full);
+                } else {
+                    subtitle.setText(aa.subtitle);
+                }
             }
         }
 
@@ -360,7 +364,7 @@ public class AnnotationsOverlay extends ItemizedOverlay {
 
             try {
                 for (MyAnnotation a : MainScreenActivity.annotations) {
-                    //called atleast twice
+                    //called at least twice
                     a.blockColor = a.blockfaceColorizerWithShowPrice(myShowPrice);
                     a.blockColorPrice = a.blockColor;
 
