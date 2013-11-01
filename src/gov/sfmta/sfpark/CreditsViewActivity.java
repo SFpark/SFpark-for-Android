@@ -17,14 +17,16 @@
 
 package gov.sfmta.sfpark;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.webkit.WebView;
 import android.widget.TextView;
+import com.actionbarsherlock.app.ActionBar;
+import com.actionbarsherlock.app.SherlockActivity;
+import com.actionbarsherlock.view.MenuItem;
 
-public class CreditsViewActivity extends Activity {
+public class CreditsViewActivity extends SherlockActivity {
     static Context mContext;
 
     WebView  webView;
@@ -36,6 +38,13 @@ public class CreditsViewActivity extends Activity {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.credits);
+
+        // Set up ActionBar
+        ActionBar ab = getSupportActionBar();
+        ab.setDisplayShowTitleEnabled(true);
+        ab.setDisplayHomeAsUpEnabled(true);
+        ab.setTitle(R.string.about);
+        ab.setIcon(R.drawable.logo_header);
 
         if (SFparkActivity.DEBUG) {
             // prepend the versioncode and name from manifest
@@ -51,6 +60,18 @@ public class CreditsViewActivity extends Activity {
         webView = (WebView) findViewById(R.id.webView2);
         webView.loadUrl("file:///android_asset/credits.html");
     }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                finish();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
 
     public static void present(Context ctx) {
         Intent intent = new Intent(ctx, CreditsViewActivity.class);

@@ -89,6 +89,7 @@ public class MyAnnotation {
     public String	  uniqueID;
     public Boolean    onStreet;
     public int        blockColor;
+    public int        garageColor = grey;
     public int        blockColorAvailability;
     public int        blockColorPrice;
     public float      pricePerHour;
@@ -213,7 +214,7 @@ public class MyAnnotation {
             } else {
                 usedpercent = -58; // more than 15 percent available. hack
             }
-        } else if(capacity == 0  && used == 0 && type == "ON") {
+        } else if(capacity == 0  && used == 0 && "ON".equals(type)) {
             // On street parking, force it to red as capacity is zero
             usedpercent = -42;
         }
@@ -227,16 +228,37 @@ public class MyAnnotation {
         int amountUsed = usedpercent;
         if (invalidData) {
             itemImageName = invalid_garage;
-        } else if (amountUsed > 85  || amountUsed == -42) {
+        } else if (amountUsed > 90  || amountUsed == -42) {
             itemImageName = garage_availability_low;
-        } else if ((amountUsed <= 85 && amountUsed >= 70) || amountUsed == -58) {
+        } else if ((amountUsed <= 90 && amountUsed >= 70) || amountUsed == -58) {
             itemImageName = garage_availability_medium;
         } else if ((amountUsed < 70 && amountUsed >=0) || amountUsed == -57) {
             itemImageName = garage_availability_high;
         }
 
-        if((used > capacity) || amountUsed == -1 || amountUsed == -2) {
+        // modified so that negative available spaces will show as red, not grey:
+        if(amountUsed == -1 || amountUsed == -2) {
             itemImageName = invalid_garage;
+        }
+
+        // New rule: if available > capacity, show grey not red
+        if (avail > capacity) itemImageName = invalid_garage;
+
+        // Save garage availability color even if we're on a price page,
+        // because we may need it for the details page:
+        switch (itemImageName) {
+            case garage_availability_high:
+                garageColor = availHigh;
+                break;
+            case garage_availability_medium:
+                garageColor = availMed;
+                break;
+            case garage_availability_low:
+                garageColor = availLow;
+                break;
+            default:  // invalid
+                garageColor = grey;
+                break;
         }
 
         if (showPrice) {

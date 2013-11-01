@@ -1,52 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="fill_parent">     
 	<TextView android:text="TextView" android:id="@+id/debugText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone" android:textSize="7pt"></TextView>
-	<RelativeLayout android:id="@+id/RelativeLayout02" android:layout_width="fill_parent" android:layout_height="wrap_content" android:background="@layout/header_black">
-		<ImageView
-			android:id="@+id/logoHeader"
-		  	android:src="@drawable/logo_header"
-		    android:padding="5dp"
-		    android:layout_height="wrap_content"
-		    android:layout_width="wrap_content">
-		</ImageView>
-		<TextView
-			android:id="@+id/legendText"
-		   	android:text="Availability"
-		    android:textSize="13dp"
-		    android:padding="5dp"
-		    android:layout_height="wrap_content"
-		    android:layout_width="wrap_content" 
-	        android:layout_toRightOf="@+id/logoHeader"> 	  
-		</TextView>
-	    <ImageView 
-	    	android:id="@+id/keyImage"
-	     	android:src="@drawable/key_availability"
-	      	android:padding="5dp"
-		    android:layout_height="wrap_content"
-	        android:layout_width="wrap_content"
-	        android:layout_below="@+id/legendText"
-	        android:layout_toRightOf="@+id/logoHeader">
-	    </ImageView>
-        <ImageButton
-        	android:id="@+id/Button_REFRESH"
-			android:background="@null"
-			android:src="@drawable/button_refresh"
-			android:padding="5dp"
-			android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            android:paddingRight="5dp" 
-            android:layout_alignParentTop="true" 
-			android:hapticFeedbackEnabled="true">
-		</ImageButton>
-    </RelativeLayout>
-      <com.google.android.maps.MapView
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-	 		android:id="@+id/mapview"
-	 		android:clickable="true"
-   		    android:apiKey="0B8AIjMUEmv4PZI-qwIVcUE_Gx09ftnIHc8AvPw"
-	    />
-</LinearLayout>
 
+    <com.google.android.maps.MapView
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:id="@+id/mapview"
+          android:clickable="true"
+          android:apiKey="your-google-maps-api-key-here"
+      />
+
+    <RelativeLayout android:id="@+id/RelativeLayout02" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@layout/header_black">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true">
+
+            <TextView
+                android:id="@+id/legendText"
+                   android:text="Availability"
+                android:textSize="13dp"
+                android:padding="5dp"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:layout_toRightOf="@+id/logoHeader"
+                android:textColor="#a0a0a0">
+            </TextView>
+
+            <ImageView
+                android:id="@+id/keyImage"
+                 android:src="@drawable/key_availability"
+                  android:padding="5dp"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:layout_below="@+id/legendText"
+                android:layout_toRightOf="@+id/logoHeader">
+            </ImageView>
+        </LinearLayout>
+
+    </RelativeLayout>
+</LinearLayout>

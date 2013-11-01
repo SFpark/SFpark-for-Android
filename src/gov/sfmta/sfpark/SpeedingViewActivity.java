@@ -17,7 +17,6 @@
 
 package gov.sfmta.sfpark;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -25,9 +24,11 @@ import android.util.Log;
 import android.view.View.OnClickListener;
 import android.view.View;
 import android.webkit.WebView;
-import android.widget.ImageButton;
+import android.widget.Button;
+import com.actionbarsherlock.app.ActionBar;
+import com.actionbarsherlock.app.SherlockActivity;
 
-public class SpeedingViewActivity extends Activity {
+public class SpeedingViewActivity extends SherlockActivity {
     public static boolean speeding;
 
     static Context mContext;
@@ -47,10 +48,16 @@ public class SpeedingViewActivity extends Activity {
 
         setContentView(R.layout.speedingview);
 
+        // Set up ActionBar
+        ActionBar ab = getSupportActionBar();
+        ab.setDisplayShowTitleEnabled(false);
+        ab.setTitle(R.string.app_name);
+        ab.setIcon(R.drawable.logo_header);
+
         webView = (WebView) findViewById(R.id.webView3);
         webView.loadUrl("file:///android_asset/speeding.html");
 
-        ImageButton acceptButton = (ImageButton) findViewById(R.id.Button_ACCEPT);
+        Button acceptButton = (Button) findViewById(R.id.btnOKSpeeding);
         acceptButton.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {

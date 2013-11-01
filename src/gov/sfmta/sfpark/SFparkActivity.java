@@ -17,15 +17,16 @@
 
 package gov.sfmta.sfpark;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.widget.TextView;
+import com.actionbarsherlock.app.ActionBar;
+import com.actionbarsherlock.app.SherlockActivity;
 
-public class SFparkActivity extends Activity {
+public class SFparkActivity extends SherlockActivity {
     public static final boolean DEBUG = false;
 
     static String VersionText ="error";
@@ -37,6 +38,12 @@ public class SFparkActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.splash);
         TextView version = (TextView) findViewById(R.id.textVersion);
+
+        // Set up ActionBar
+        ActionBar ab = getSupportActionBar();
+        ab.setDisplayShowTitleEnabled(false);
+        ab.setTitle(R.string.app_name);
+        ab.setIcon(R.drawable.logo_header);
 
 
         PackageManager pm = getPackageManager();
@@ -59,7 +66,7 @@ public class SFparkActivity extends Activity {
         Thread welcomeThread = new Thread() {
 
                 // 2 seconds, enough time to read version number
-                long endit = System.currentTimeMillis() + (2 * 1000);
+                long endit = System.currentTimeMillis() + (1400);
 
                 @Override
                 public void run() {

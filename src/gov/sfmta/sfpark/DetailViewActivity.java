@@ -17,32 +17,35 @@
 
 package gov.sfmta.sfpark;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.actionbarsherlock.app.ActionBar;
+import com.actionbarsherlock.app.SherlockActivity;
+import com.actionbarsherlock.view.MenuItem;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class DetailViewActivity extends Activity {
+public class DetailViewActivity extends SherlockActivity {
 
     private static final String TAG = "SFpark";
     public static MyAnnotation annotation = null;
 
     public String	row,row2,beg,end,from,to,rate,desc,rq,rr;
 
-    private TextView nameLabel;
     private TextView garageUse;
     private TextView addressLabel;
     private TextView phoneTextView;
+    private TextView detailName;
 
     private LinearLayout listLayout;
     static Context       mContext;
@@ -59,11 +62,23 @@ public class DetailViewActivity extends Activity {
             return;
         }
 
-        nameLabel = (TextView) findViewById(R.id.nameText);
-        garageUse = (TextView) findViewById(R.id.usageText);
+        // Set up ActionBar
+        ActionBar ab = getSupportActionBar();
+        ab.setDisplayShowTitleEnabled(true);
+        ab.setTitle("  ::  " + annotation.title);
+        ab.setIcon(R.drawable.logo_header);
+        ab.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
+        ab.setDisplayHomeAsUpEnabled(true);
 
-        nameLabel.setText(annotation.title);
+        detailName = (TextView) findViewById(R.id.detailName);
+        detailName.setText(annotation.title.toUpperCase());
+
+        garageUse = (TextView) findViewById(R.id.usageText);
         garageUse.setText(annotation.subtitle);
+
+        View availColor = findViewById(R.id.blockColor);
+        availColor.setBackgroundColor(
+                annotation.onStreet ? annotation.blockColorAvailability : annotation.garageColor);
 
         if (!annotation.onStreet) {
             addressLabel = (TextView) findViewById(R.id.addressText);
@@ -101,27 +116,33 @@ public class DetailViewActivity extends Activity {
         }
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                finish();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+
     //create a text view for the header of a section
-    public TextView headerText(String val) {
-        TextView htv = new TextView(this);
-        htv.setBackgroundColor(Color.DKGRAY);
-        htv.setTextColor(Color.WHITE);
-        htv.setPadding(5, 5, 5, 5);
-        htv.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT,
-                                                          LinearLayout.LayoutParams.WRAP_CONTENT));
-        htv.setTextAppearance(this, android.R.style.TextAppearance_Medium);
-        htv.setText(val);
-        return htv;
+    public View headerText(String val) {
+        View header = View.inflate(this,R.layout.header_row, null);
+        TextView title = (TextView) header.findViewById(R.id.header_title);
+        title.setText(val);
+        return header;
     }
 
     //create a text view for the regular text within a section
     public TextView normalText(String val) {
         TextView ntv = new TextView(this);
-        ntv.setPadding(20, 8, 8, 8);
-        ntv.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT,
-                                                          LinearLayout.LayoutParams.WRAP_CONTENT));
-        ntv.setTextAppearance(this, android.R.style.TextAppearance_Small);
-        ntv.setBackgroundColor(Color.LTGRAY);
+        ntv.setPadding(8, 7, 5, 7);
+        ntv.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+        ntv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
         ntv.setTextColor(Color.BLACK);
         ntv.setText(val);
         return ntv;
@@ -130,17 +151,10 @@ public class DetailViewActivity extends Activity {
 
     //create a text view for highlighted text within a section
     public TextView highlightText(String val) {
-        TextView gtv = new TextView(this);
-        gtv.setPadding(20, 8, 8, 8);
-        gtv.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT,
-                                                          LinearLayout.LayoutParams.WRAP_CONTENT));
-        gtv.setTextAppearance(this, android.R.style.TextAppearance_Small);
-        gtv.setBackgroundColor(Color.GRAY);
-        gtv.setTextColor(Color.BLACK);
-        gtv.setText(val);
+        TextView gtv = normalText(val);
+        gtv.setBackgroundResource(R.color.highlight_row);
         return gtv;
     }
-
 
 
     public static void present(Context ctx, MyAnnotation a) {
@@ -169,7 +183,7 @@ public class DetailViewActivity extends Activity {
             return;
         }
 
-        listLayout.addView(headerText("Hours of Operation"));
+        listLayout.addView(headerText(getString(R.string.hours)));
 
         JSONArray  opsArray = ophrs.optJSONArray("OPS");
 
@@ -259,7 +273,7 @@ public class DetailViewActivity extends Activity {
             float phr = Float.parseFloat(rate);
 
             if (beg != null) {
-                listLayout.addView(headerText("Rates"));
+                listLayout.addView(headerText(getString(R.string.rates)));
                 displayedRates = true;
 
                 row = beg + " - " + end;
@@ -296,7 +310,7 @@ public class DetailViewActivity extends Activity {
 
             if (beg != null) {
                 if (!displayedRates) {
-                    listLayout.addView(headerText("Rates"));
+                    listLayout.addView(headerText(getString(R.string.rates)));
                     displayedRates = true;
                 }
 
@@ -324,7 +338,7 @@ public class DetailViewActivity extends Activity {
     private void hr() {
         View ruler = new View(mContext); ruler.setBackgroundColor(Color.WHITE);
         listLayout.addView(ruler, new ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.FILL_PARENT, 2));
+            ViewGroup.LayoutParams.MATCH_PARENT, 2));
     }
 
     // RS + DESC goes to Information bucket.
@@ -366,9 +380,9 @@ public class DetailViewActivity extends Activity {
             if (desc != null) {
                 if (!displayedInfo) {
                     if (displayedRates) {
-                        listLayout.addView(headerText("Information"));
+                        listLayout.addView(headerText(getString(R.string.info)));
                     } else {
-                        listLayout.addView(headerText("Rates"));
+                        listLayout.addView(headerText(getString(R.string.rates)));
                     }
                     displayedInfo = true;
                 }

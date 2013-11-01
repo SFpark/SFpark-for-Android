@@ -1,44 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:orientation="vertical" android:layout_width="fill_parent"  android:layout_height="fill_parent">     
- 	<RelativeLayout android:layout_width="fill_parent" android:layout_height="wrap_content" android:background="@layout/header_black">
-		<ImageView
-			android:id="@+id/logoHeader"
-		  	android:src="@drawable/logo_header"
-		    android:padding="5dp"
-		    android:layout_height="wrap_content"
-		    android:layout_width="wrap_content">
-		</ImageView>
-	</RelativeLayout>
-	<RelativeLayout android:layout_width="fill_parent" android:layout_height="wrap_content" android:background="@layout/header_red">
-		<TextView
-			android:text="Warning" 
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:textSize="12pt"
-			android:paddingLeft="5dp">
-		</TextView>
-	</RelativeLayout>
-	 <RelativeLayout android:layout_width="fill_parent" android:layout_height="fill_parent" android:background="@layout/header_black">
-		<ImageButton
-			android:src="@drawable/button_accept"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:background="@null"
-			android:layout_alignParentBottom="true"
-	 		android:id="@+id/Button_AGREE"
-	 		android:padding="5dp"
-	 		android:paddingLeft="5dp">
-		</ImageButton>
-		<ScrollView android:id="@+id/textAreaScroller" android:layout_width="fill_parent" android:layout_height="fill_parent" android:layout_above="@id/Button_AGREE">
-			<TextView
-			android:background="#ffffff"
-			android:textColor="#000000"
-			android:text="@string/disclaimer_txt" 
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:textSize="6pt"
-			android:paddingLeft="5dp">
-			</TextView>
-		</ScrollView>
-	</RelativeLayout>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="fill_parent"
+    android:padding="8sp" >
+
+    <TextView
+        android:text="@string/warning_header"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:paddingLeft="5dp" android:textColor="@color/header_red"
+        android:paddingTop="10dp"
+        android:paddingRight="5dp"
+        android:textStyle="bold">
+    </TextView>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:focusableInTouchMode="true"
+        android:background="@color/header_red"
+        android:layout_marginBottom="10dp"
+        >
+    </View>
+
+    <ScrollView android:id="@+id/textAreaScroller" android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1">
+        <TextView
+        android:background="#ffffff"
+        android:textColor="#000000"
+        android:text="@string/disclaimer_txt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:paddingLeft="5dp"
+            android:clickable="true"
+            android:paddingRight="5dp">
+        </TextView>
+    </ScrollView>
+
+    <Button
+        android:id="@+id/Button_AGREE"
+        android:layout_width="match_parent"
+        android:layout_height="50sp"
+        android:layout_alignParentBottom="true"
+        android:text="@string/btn_accept_continue"
+        android:layout_marginBottom="5dp"
+        android:layout_marginLeft="5dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginRight="5dp"
+        android:textColor="#ffffff"
+        android:background="@drawable/btn_selector"
+        android:textSize="17sp">
+    </Button>
 </LinearLayout>

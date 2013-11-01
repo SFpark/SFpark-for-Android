@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<resources>
+    <color name="header_red">#d51a0d</color>
+    <color name="header_blue">#05a0dd</color>
+    <color name="header_dark_blue">#004667</color>
+    <color name="highlight_row">#ffb1ffb0</color>
+</resources>

@@ -1,41 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:orientation="vertical" android:layout_width="fill_parent"  android:layout_height="fill_parent">     
- 	<RelativeLayout android:id="@+id/RelativeLayout05" android:layout_width="fill_parent" android:layout_height="wrap_content" android:background="@layout/header_black">
-		<ImageView
-			android:id="@+id/logoHeader"
-		  	android:src="@drawable/logo_header"
-		    android:padding="5dp"
-		    android:layout_height="wrap_content"
-		    android:layout_width="wrap_content">
-		</ImageView>
-	</RelativeLayout>
-	<RelativeLayout android:id="@+id/RelativeLayout04" android:layout_width="fill_parent" android:layout_height="wrap_content" android:background="@layout/header_red">
-		<TextView
-			android:text="Warning" 
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:textSize="12pt"
-			android:paddingLeft="5dp">
-		</TextView>
-	</RelativeLayout>
- 	<RelativeLayout android:id="@+id/RelativeLayout07" android:layout_width="fill_parent" android:layout_height="fill_parent" android:background="@layout/header_black">
-		<ImageButton
-			android:src="@drawable/button_accept"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:background="@null"
-			android:layout_alignParentBottom="true"
-	 		android:id="@+id/Button_ACCEPT"
-	 		android:padding="5dp"
-	 		android:paddingLeft="5dp">
-		</ImageButton>
-		<WebView
-     	   	android:layout_width="fill_parent"
-     	   	android:id="@+id/webView3"
-     	   	android:layout_above="@id/Button_ACCEPT"
-        	android:layout_alignParentTop="true"
-        	android:layout_height="fill_parent">
-		</WebView>
-	</RelativeLayout>
-	
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:orientation="vertical" android:layout_width="fill_parent"  android:layout_height="fill_parent"
+              android:padding="5dp">
+
+    <TextView
+        android:text="@string/warning_header"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:paddingLeft="5dp"
+        android:textColor="@color/header_red"
+        android:textStyle="bold"
+        android:paddingTop="25dp">
+    </TextView>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="@color/header_red"
+        android:layout_marginBottom="5dp"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"/>
+
+    <WebView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/webView3"
+        android:layout_weight="1"
+        >
+    </WebView>
+
+    <Button
+        android:id="@+id/btnOKSpeeding"
+        android:layout_width="match_parent"
+        android:layout_height="50sp"
+        android:text="@string/btn_accept_continue"
+        android:layout_marginBottom="5dp"
+        android:layout_marginLeft="5dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginRight="5dp"
+        android:textColor="#ffffff"
+        android:background="@drawable/btn_selector"
+        android:textSize="17sp"/>
+
 </LinearLayout>

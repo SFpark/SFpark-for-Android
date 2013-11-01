@@ -34,16 +34,18 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.format.DateUtils;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View.OnClickListener;
 import android.view.View;
-import android.widget.ImageButton;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import android.widget.Toast;
+import com.actionbarsherlock.app.ActionBar;
+import com.actionbarsherlock.app.SherlockMapActivity;
+import com.actionbarsherlock.view.Menu;
+import com.actionbarsherlock.view.MenuItem;
+import com.flurry.android.FlurryAgent;
 import com.google.android.maps.GeoPoint;
-import com.google.android.maps.MapActivity;
 import com.google.android.maps.MapController;
 import com.google.android.maps.MapView;
 import com.google.android.maps.Overlay;
@@ -77,7 +79,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
-public class MainScreenActivity extends MapActivity
+public class MainScreenActivity extends SherlockMapActivity
+        implements ActionBar.OnNavigationListener
 {
 
     private static final String TAG = "SFpark";
@@ -119,16 +122,43 @@ public class MainScreenActivity extends MapActivity
     public static int           timeStampMinutes;
 
     String serviceURL = "http://api.sfpark.org/sfpark/rest/availabilityservice?radius=2.0&response=json&pricing=yes&version=1.0";
+    // String serviceURL = "http://api.sfpark.org/sfparkTestData.json";
 
     private static final int SECOND_IN_MILLIS = (int) DateUtils.SECOND_IN_MILLIS;
+
+    @Override
+    protected void onStart()
+    {
+        super.onStart();
+        //FlurryAgent.onStartSession(this, "--your--key-here--");
+    }
+
+    @Override
+    protected void onStop()
+    {
+        super.onStop();
+        FlurryAgent.onEndSession(this);
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         MYLOG("onCreate");
 
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.main);
+
+        // Set up ActionBar
+        ActionBar ab = getSupportActionBar();
+        ab.setDisplayShowTitleEnabled(false);
+        ab.setIcon(R.drawable.logo_header);
+        ab.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
+
+        // Dropdown navigation
+        final String[] dropdownValues = getResources().getStringArray(R.array.dropdown);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(ab.getThemedContext(),
+                R.layout.sherlock_spinner_item, android.R.id.text1, dropdownValues);
+        adapter.setDropDownViewResource(R.layout.sherlock_spinner_dropdown_item);
+        ab.setListNavigationCallbacks(adapter, this);
 
         if (SFparkActivity.DEBUG) {
             debugText = (TextView) findViewById(R.id.debugText);
@@ -153,18 +183,53 @@ public class MainScreenActivity extends MapActivity
 
         startLocation();
 
-        ImageButton refreshButton = (ImageButton) findViewById(R.id.Button_REFRESH);
-        refreshButton.setOnClickListener(new OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    reset();
-                }
-            });
-
         reset();
     }
 
+    private static final String STATE_SELECTED_NAVIGATION_ITEM = "selected_navigation_item";
+
+    @Override
+    public void onRestoreInstanceState(Bundle savedInstanceState) {
+        // Restore the previously serialized current dropdown position.
+        if (savedInstanceState.containsKey(STATE_SELECTED_NAVIGATION_ITEM)) {
+            getSupportActionBar().setSelectedNavigationItem(savedInstanceState.getInt(STATE_SELECTED_NAVIGATION_ITEM));
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        // Serialize the current dropdown position.
+        outState.putInt(STATE_SELECTED_NAVIGATION_ITEM,
+            getSupportActionBar().getSelectedNavigationIndex());
+    }
+
+    /** show the correct view when dropdown is changed */
+    @Override
+    public boolean onNavigationItemSelected(int position, long id) {
+
+        if (position==0) { // availability
+            FlurryAgent.logEvent("Availability_Mode_Shown");
+            mapView.removeAllViews();
+            showPrice = false;
+            displayData(showPrice);
+            return true;
+        }
+
+        if (position==1) { // prices
+            if (showPrice == false) {
+                FlurryAgent.logEvent("Pricing_Mode_Shown");
+                mapView.removeAllViews();
+                showPrice = true;
+                displayData(showPrice);
+                return true;
+            }
+        }
+        return true;
+    }
+
     void reset() {
+        getSupportActionBar().setSelectedNavigationItem(0);
+
         List<Overlay> mapOverlays = mapView.getOverlays();
         mapOverlays.clear();
         showPrice = false;
@@ -181,36 +246,24 @@ public class MainScreenActivity extends MapActivity
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
-        getMenuInflater().inflate(R.layout.options_menu, menu);
+        getSupportMenuInflater().inflate(R.layout.options_menu, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.m_availability:
-                {
-                    mapView.removeAllViews();
-                    showPrice = false;
-                    displayData(showPrice);
-                    return true;
-                }
-
-            case R.id.m_price:
-                {
-                    if (showPrice == false) {
-                        mapView.removeAllViews();
-                        showPrice = true;
-                        displayData(showPrice);
-                        return true;
-                    }
-                }
-
+            case R.id.m_refresh:
+            {
+                FlurryAgent.logEvent("Refresh_Button_Pressed");
+                reset();
+                return true;
+            }
             case R.id.m_about:
-                {
-                    showInfo();
-                    return true;
-                }
+            {
+                showInfo();
+                return true;
+            }
         }
         return false;
     }
@@ -226,8 +279,10 @@ public class MainScreenActivity extends MapActivity
         showPrice = false;
         availabilityAnnotationsOverlay = null;
         pricingAnnotationsOverlay = null;
-        annotations.clear();
-        annotations = null;
+        if (annotations != null) {
+            annotations.clear();
+            annotations = null;
+        }
     }
 
     @Override
@@ -423,6 +478,8 @@ public class MainScreenActivity extends MapActivity
                 pd.dismiss();
             } catch (JSONException e) {
                 e.printStackTrace();
+            } catch (NullPointerException npe) {
+                // this can happen if activity finished.  ignore.
             }
         }
     }
@@ -479,7 +536,7 @@ public class MainScreenActivity extends MapActivity
         if (showPrice == true) {
             pricingAnnotationsOverlay = new AnnotationsOverlay(invisible,mapView.getContext());
             pricingAnnotationsOverlay.loadOverlaysProgress(showPrice);
-        } else {
+        } else {                  // NPE!!
             availabilityAnnotationsOverlay = new AnnotationsOverlay(invisible,mapView.getContext());
             availabilityAnnotationsOverlay.loadOverlays(showPrice);
             updateMap();
@@ -621,8 +678,7 @@ public class MainScreenActivity extends MapActivity
                                 warningSeen = true;
                                 editor.putBoolean(WARNING_KEY, warningSeen);
                                 editor.commit();
-                                // turn off location now to save battery, the deal is done
-                                // locationManager.removeUpdates(this);
+
                                 SpeedingViewActivity.present(mapView.getContext());
                             }
                         }

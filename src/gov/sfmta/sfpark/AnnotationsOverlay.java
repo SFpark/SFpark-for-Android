@@ -38,6 +38,7 @@ import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.view.ViewTreeObserver;
 import android.widget.TextView;
 
+import com.flurry.android.FlurryAgent;
 import com.google.android.maps.GeoPoint;
 import com.google.android.maps.ItemizedOverlay;
 import com.google.android.maps.MapView.LayoutParams;
@@ -48,6 +49,8 @@ import com.google.android.maps.Projection;
 import org.json.JSONException;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class AnnotationsOverlay extends ItemizedOverlay {
 
@@ -201,14 +204,28 @@ public class AnnotationsOverlay extends ItemizedOverlay {
 
         TextView title = (TextView)popupView.findViewById(R.id.detailTitle);
         TextView subtitle = (TextView)popupView.findViewById(R.id.detailSubtitle);
+        title.setTextColor(0xFFffffff);
+        subtitle.setTextColor(0xFFcccccc);
 
+        // set bubble title
+        title.setText(aa.title != null ? aa.title : mContext.getString(R.string.unknown));
 
-        title.setText(aa.title);
+        // Bubble Flurry!
+        Map<String, String> details = new HashMap<String, String>();
+        details.put("Details for", aa.title);
+        FlurryAgent.logEvent("Show_Details", details);
 
-        if (aa.subtitle != null) {
-            subtitle.setText(aa.subtitle);
+        // set bubble subtitle
+        if (aa.subtitle == null) {
+            subtitle.setText(R.string.full);
+            aa.subtitle = mContext.getString(R.string.full);
         } else {
-            subtitle.setVisibility(View.GONE);
+            if (aa.subtitle.startsWith("Estimated 0 of") || aa.subtitle.startsWith("Estimated -")) {
+                subtitle.setText(R.string.full);
+                aa.subtitle = mContext.getString(R.string.full);
+            } else {
+                subtitle.setText(aa.subtitle);
+            }
         }
 
         LayoutParams mapDialogParams = new LayoutParams(
@@ -222,6 +239,12 @@ public class AnnotationsOverlay extends ItemizedOverlay {
                 @Override
                 public void onClick(View v) {
                     Log.v(TAG, "Details tapped");
+
+                    // Bubble Flurry!
+                    Map<String, String> moreDetails = new HashMap<String, String>();
+                    moreDetails.put("Details for", aa.title);
+                    FlurryAgent.logEvent("Show_More_Details", moreDetails);
+
                     DetailViewActivity.present(mContext, aa);
                     return;
                 }
@@ -283,17 +306,22 @@ public class AnnotationsOverlay extends ItemizedOverlay {
         mPaint.setAntiAlias(true);
         mPaint.setStrokeWidth(6);
 
-        for (MyAnnotation a : MainScreenActivity.annotations) {
-            if (a.onStreet) {
-                projection.toPixels(a.nw, from);
-                projection.toPixels(a.se, to);
-                if (MainScreenActivity.showPrice) {
-                    mPaint.setColor(a.blockColorPrice);
-                } else {
-                    mPaint.setColor(a.blockColorAvailability);
+        // could have NPE:
+        try {
+            for (MyAnnotation a : MainScreenActivity.annotations) {
+                if (a.onStreet) {
+                    projection.toPixels(a.nw, from);
+                    projection.toPixels(a.se, to);
+                    if (MainScreenActivity.showPrice) {
+                        mPaint.setColor(a.blockColorPrice);
+                    } else {
+                        mPaint.setColor(a.blockColorAvailability);
+                    }
+                    canvas.drawLine(from.x, from.y, to.x, to.y, mPaint);
                 }
-                canvas.drawLine(from.x, from.y, to.x, to.y, mPaint);
             }
+        } catch (NullPointerException npe) {
+            // oh sadface! just ignore.
         }
 
         super.draw(canvas, mapv, shadow);
