@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<manifest android:versionCode="201" android:versionName="2.0.1"
+<manifest android:versionCode="202" android:versionName="2.0.2"
     package="gov.sfmta.sfpark" xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-sdk android:minSdkVersion="7" android:targetSdkVersion="17"/>

@@ -429,7 +429,7 @@ public class MyAnnotation {
         // Restricted is always RED.
         if (NOPARKING_SET.contains(rq)) {
             pricePerHour = 0; // priceHigh;
-            lineColor = red;
+            lineColor = grey;
         }
 
         return lineColor;
@@ -475,7 +475,7 @@ public class MyAnnotation {
 
         // Restricted is always RED.
         if (NOPARKING_SET.contains(rq)) {
-            lineColor = red;
+            lineColor = grey;
         }
 
         return lineColor;
@@ -495,7 +495,7 @@ public class MyAnnotation {
             if (allGarageData.has(OCC_KEY)) {
                 occupied = allGarageData.optInt(OCC_KEY,0);
                 if(numberOfOperationalSpaces == 0 && occupied == 0 && !showPrice) {
-                    return (NOPARKING_SET.contains(rq) ? red : grey);
+                    return grey;
                 }
                 if(numberOfOperationalSpaces == 0) {
                     usedPercent = 0.0;
@@ -509,7 +509,7 @@ public class MyAnnotation {
             // price/availability mode.
             if (!showPrice || (occupied != 0 && numberOfOperationalSpaces != 0)) {
                 if (!(allGarageData.has(OCC_KEY)) && !(allGarageData.has(OPER_KEY))) {
-                    return (NOPARKING_SET.contains(rq) ? red : grey);
+                    return grey;
                 }
                 return red;
             }
@@ -543,7 +543,7 @@ public class MyAnnotation {
 
         // Trump card: restricted is always red.
         if (NOPARKING_SET.contains(rq)) {
-            lineColor = red;
+            lineColor = grey;
         }
         return lineColor;
     }

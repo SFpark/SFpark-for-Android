@@ -115,6 +115,10 @@ public class AnnotationsOverlay extends ItemizedOverlay {
         mOverlays.clear();
 
         for (MyAnnotation a : MainScreenActivity.annotations) {
+
+            // new: don't add annotations for on-street availability
+            if (a.onStreet && (!showprice)) continue;
+
             try {
                 a.blockColor = a.blockfaceColorizerWithShowPrice(showprice);
                 a.blockColorAvailability = a.blockColor;
@@ -309,6 +313,7 @@ public class AnnotationsOverlay extends ItemizedOverlay {
         mPaint.setStyle(Style.STROKE);
         mPaint.setAntiAlias(true);
         mPaint.setStrokeWidth(6);
+        mPaint.setStrokeCap(Paint.Cap.ROUND);
 
         // could have NPE:
         try {
@@ -318,10 +323,11 @@ public class AnnotationsOverlay extends ItemizedOverlay {
                     projection.toPixels(a.se, to);
                     if (MainScreenActivity.showPrice) {
                         mPaint.setColor(a.blockColorPrice);
+                        canvas.drawLine(from.x, from.y, to.x, to.y, mPaint);
                     } else {
-                        mPaint.setColor(a.blockColorAvailability);
+                        // new: no more availability data on blockfaces.
+                        // mPaint.setColor(a.blockColorAvailability);
                     }
-                    canvas.drawLine(from.x, from.y, to.x, to.y, mPaint);
                 }
             }
         } catch (NullPointerException npe) {

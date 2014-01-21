@@ -97,7 +97,7 @@ public class MainScreenActivity extends SherlockMapActivity
     static AnnotationsOverlay pricingAnnotationsOverlay = null;
 
     TextView       debugText    = null;
-    static boolean showPrice    = false;
+    static boolean showPrice    = true;
     String         timeStampXML = null;
     boolean        warningSeen  = false;
 
@@ -109,8 +109,9 @@ public class MainScreenActivity extends SherlockMapActivity
     public static Date timeStamp;
     public static int  timeStampMinutes;
 
-    String serviceURL = "http://api.sfpark.org/sfpark/rest/availabilityservice?radius=2.0&response=json&pricing=yes&version=1.0";
+    String serviceURL = "http://api.sfpark.org/sfpark/rest/availabilityservice?radius=5.0&response=json&pricing=yes&version=1.0";
     // String serviceURL = "http://api.sfpark.org/sfparkTestData.json";
+    // String serviceURL = "http://75.10.224.12:9001/testb/sfpark/rest/availabilityservice?radius=5.0&response=json&pricing=yes&version=1.0";
 
     private static final int SECOND_IN_MILLIS = (int) DateUtils.SECOND_IN_MILLIS;
 
@@ -118,7 +119,6 @@ public class MainScreenActivity extends SherlockMapActivity
     protected void onStart()
     {
         super.onStart();
-        //FlurryAgent.onStartSession(this, "your-flurry-api-key-here");
     }
 
     @Override
@@ -141,10 +141,10 @@ public class MainScreenActivity extends SherlockMapActivity
         ab.setIcon(R.drawable.logo_header);
         ab.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
         ab.addTab(ab.newTab()
-                .setText("Availability")
+                .setText("Price")
                 .setTabListener(new TabListener()));
         ab.addTab(ab.newTab()
-                .setText("Price")
+                .setText("Availability")
                 .setTabListener(new TabListener()));
 
 
@@ -181,7 +181,7 @@ public class MainScreenActivity extends SherlockMapActivity
 
         startLocation();
 
-        showPrice = false;
+        showPrice = true;
 
         enablePanToMe();
         reset();
@@ -241,7 +241,17 @@ public class MainScreenActivity extends SherlockMapActivity
     public boolean onNavigationItemSelected(int position, long id) {
 
         try {
-            if (position==0) { // availability
+            if (position==0) { // prices
+                if (showPrice == false) {
+                    FlurryAgent.logEvent("Pricing_Mode_Shown");
+                    mapView.removeAllViews();
+                    showPrice = true;
+                    displayData(showPrice);
+                    return true;
+                }
+            }
+
+            if (position==1) { // availability
                 if (showPrice == true) {
                     FlurryAgent.logEvent("Availability_Mode_Shown");
                     mapView.removeAllViews();
@@ -251,15 +261,6 @@ public class MainScreenActivity extends SherlockMapActivity
                 return true;
             }
 
-            if (position==1) { // prices
-                if (showPrice == false) {
-                    FlurryAgent.logEvent("Pricing_Mode_Shown");
-                    mapView.removeAllViews();
-                    showPrice = true;
-                    displayData(showPrice);
-                    return true;
-                }
-            }
         } catch (NullPointerException npe) {
             //yawn
         }
@@ -439,6 +440,10 @@ public class MainScreenActivity extends SherlockMapActivity
             MyAnnotation annotation = new MyAnnotation();
             annotation.allGarageData = interestArea;
             annotation.initFromData();
+
+            // new: UBER-HACK! SFMTA wants me to hide the Calif/Steiner lot.
+            if ("California and Steiner Lot".equals(annotation.title)) continue;
+
             annotations.add(annotation);
         }
 
